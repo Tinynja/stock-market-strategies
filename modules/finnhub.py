@@ -19,15 +19,26 @@ class Finnhub:
 
 		self.printer = printer
 
-	def request_atr(self, symbol, resolution, start, end, timeperiod=14):
-		resp = self._request_atr(symbol, resolution, start, end, timeperiod)
+	def get_stocks(self, exchange):
+		resp = self._request(f"https://finnhub.io/api/v1/stock/symbol?exchange={exchange}&token={self.token}")
+		if resp[0] == 0:
+			resp = resp[1]
+			if "{" in resp.text:
+				return 0, resp.json(), "OK"
+			else:
+				return 4, resp, "Invalid exchange code"
+		else:
+			return resp
+	
+	def get_atr(self, symbol, resolution, start, end, timeperiod=14):
+		resp = self._get_atr(symbol, resolution, start, end, timeperiod)
 		if resp[0] == 0:
 			self.printer.rewrite("Successfully retrieved data from Finnhub.", prefix=True)
 		else:
 			self.printer.reprint(f"Requesting data from Finnhub.... ERROR: {resp[2]}", prefix=True)
 		return resp
 
-	def _request_atr(self, symbol, resolution, start, end, timeperiod):
+	def _get_atr(self, symbol, resolution, start, end, timeperiod):
 		# Requests ATR values, and returns the raw reponse as a json dictionnary
 		# Error codes:
 		#   2 := HTTPError
@@ -35,39 +46,44 @@ class Finnhub:
 		#   4 := API limit reached
 		#   5 := no_data
 		#   6 := Timeperiod is too long for serie
-		weight = 1
+
+		resp = self._request(f"http://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
 		
+		if resp[0] == 0:
+			resp = resp[1]
+			if "timeperiod is too long for series" in resp.text.lower():
+				return 4, resp, "Timeperiod is too long for series"
+			elif "no_data" in resp.text.lower():
+				return 5, resp, "no_data"
+			elif "{" in resp.text:
+				resp = resp.json()
+				resp['t'] = [dt.fromtimestamp(resp['t'][i]).strftime("%Y-%m-%d %H:%M:%S") for i in range(len(resp['t']))]
+				i = 0
+				for d in [list(a) for a in zip(resp['o'], resp['h'], resp['l'], resp['c'], resp['v'], resp['atr'])]:
+					if d[-1] != 0:
+						resp[resp['t'][i]] = d
+					i += 1
+				for k in ['s', 't', 'o', 'h', 'l', 'c', 'v', 'atr']:
+					resp.pop(k)
+				return 0, resp, "OK"
+		else:
+			return resp
+
+	def _request(self, url, weight=1):
 		self.printer.progressprint(f"Waiting for ratelimit reset ({dt.fromtimestamp(self.ratelimit_resettime)})", prefix=True)
 		self.ratelimit_wait(weight)
 		self.printer.progressprint("Requesting data from Finnhub", prefix=True)
-
-		resp = requests.get(f"http://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
-
+		resp = requests.get(url)
 		if "X-Ratelimit-Remaining" in resp.headers:
 			self.ratelimit_remaining = int(resp.headers["X-Ratelimit-Remaining"])
 			self.ratelimit_resettime = int(resp.headers["X-Ratelimit-Reset"])+3
-		
-		if "timeperiod is too long for series" in resp.text.lower():
-			return 6, resp, "Timeperiod is too long for series"
-		elif "no_data" in resp.text.lower():
-			return 5, resp, "no_data"
+		if "invalid api key" in resp.text.lower():
+			return 2, resp, "Invalid API key"
 		elif "api limit reached" in resp.text.lower():
-			return 4, resp, "API limit reached"
-		elif "invalid api key" in resp.text.lower():
-			return 3, resp, "Invalid API key"
-		elif "{" in resp.text:
-			resp = resp.json()
-			resp['t'] = [dt.fromtimestamp(resp['t'][i]).strftime("%Y-%m-%d %H:%M:%S") for i in range(len(resp['t']))]
-			i = 0
-			for d in [list(a) for a in zip(resp['o'], resp['h'], resp['l'], resp['c'], resp['v'], resp['atr'])]:
-				if d[-1] != 0:
-					resp[resp['t'][i]] = d
-				i += 1
-			for k in ['s', 't', 'o', 'h', 'l', 'c', 'v', 'atr']:
-				resp.pop(k)
-			return 0, resp, "OK"
+			return 3, resp, "API limit reached"
 		else:
-			return 2, resp, "HTTPError"
+			return 0, resp, "Unknown error"
+
 
 	def ratelimit_wait(self, weight):
 		# Continuously check for ratelimit until request weight is allowed
