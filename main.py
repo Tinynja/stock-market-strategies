@@ -77,15 +77,12 @@ for f_name in listdir('Exchanges'):
 				else:
 					cursor.execute("INSERT INTO stock (symbol, exchange) VALUES (%s, %s)", (s, exchange))
 				# Retrieve data from api
-				try:
-					api_data = api.request_atr(
-						s,
-						'D',
-						int(dt.timestamp(args.START)),
-						int(dt.timestamp(args.END)),
-						timeperiod=args.TIME_PERIOD)
-				except:
-					api_data = [1, [], 'Unkown error']
+				api_data = api.request_atr(
+					s,
+					'D',
+					int(dt.timestamp(args.START)),
+					int(dt.timestamp(args.END)),
+					timeperiod=args.TIME_PERIOD)
 				# Check if data exists in database
 				if api_data[0] == 0:
 					pr.progressprint("Checking existing data in database", prefix=True)
