@@ -42,7 +42,7 @@ if not args.nocolumncheck:
 	cursor.verifycolumn('history', 'close', 'decimal', '10,3', default=None, nullable=True, after='low', printer=pr)
 	cursor.verifycolumn('history', 'volume', 'decimal', '10,1', default=None, nullable=True, after='close', printer=pr)
 	cursor.verifycolumn('history', 'atr_'+str(args.TIME_PERIOD), 'decimal', '15,8', default=None, nullable=True, printer=pr)
-	cursor.verifycolumn('error', 'symbol', 'varchar', 10, default=None, nullable=False, after='id', printer=pr)
+	cursor.verifycolumn('error', 'symbol', 'varchar', 20, default=None, nullable=False, after='id', printer=pr)
 	cursor.verifycolumn('error', 'resolution', 'varchar', 2, default=None, nullable=True, after='symbol', printer=pr)
 	cursor.verifycolumn('error', 'start', 'datetime', default=None, nullable=True, after='resolution', printer=pr)
 	cursor.verifycolumn('error', 'end', 'datetime', default=None, nullable=True, after='start', printer=pr)
