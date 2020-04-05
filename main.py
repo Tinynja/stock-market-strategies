@@ -22,6 +22,7 @@ parser.add_argument("START", help="datetime of the first datapoint (YYYY-mm-dd H
 parser.add_argument("END", help="datetime of the last datapoint (YYYY-mm-dd HH:MM:SS)", type=lambda s: dt.strptime(s, "%Y-%m-%d %H:%M:%S"))
 parser.add_argument("TIME_PERIOD", help="time period to use for ATR indicator")
 parser.add_argument("-a", "--all", help="don't skip stocks already saved in db", action="store_true")
+parser.add_argument("-c", "--nocolumncheck", help="skip checking if necessary columns are in database", action="store_true")
 args = parser.parse_args()
 
 # Initiate connection and start printer thread
@@ -31,21 +32,22 @@ cursor = mydb.cursor()
 api = Finnhub(token=args.TOKEN, printer=pr)
 
 # Make sure all columns are created
-cursor.verifycolumn('stock', 'symbol', 'varchar', 10, default=None, nullable=True, after='id', printer=pr)
-cursor.verifycolumn('stock', 'exchange', 'varchar', 10, default=None, nullable=True, after='symbol', printer=pr)
-cursor.verifycolumn('history', 'date', 'datetime', default=None, nullable=False, after='id_symbol', printer=pr)
-cursor.verifycolumn('history', 'resolution', 'varchar', 2, default=None, nullable=False, after='date', printer=pr)
-cursor.verifycolumn('history', 'open', 'decimal', '10,3', default=None, nullable=True, after='resolution', printer=pr)
-cursor.verifycolumn('history', 'high', 'decimal', '10,3', default=None, nullable=True, after='open', printer=pr)
-cursor.verifycolumn('history', 'low', 'decimal', '10,3', default=None, nullable=True, after='high', printer=pr)
-cursor.verifycolumn('history', 'close', 'decimal', '10,3', default=None, nullable=True, after='low', printer=pr)
-cursor.verifycolumn('history', 'volume', 'decimal', '10,1', default=None, nullable=True, after='close', printer=pr)
-cursor.verifycolumn('history', 'atr_'+str(args.TIME_PERIOD), 'decimal', '15,8', default=None, nullable=True, printer=pr)
-cursor.verifycolumn('error', 'resolution', 'varchar', 2, default=None, nullable=True, after='id_symbol', printer=pr)
-cursor.verifycolumn('error', 'start', 'datetime', default=None, nullable=True, after='resolution', printer=pr)
-cursor.verifycolumn('error', 'end', 'datetime', default=None, nullable=True, after='start', printer=pr)
-cursor.verifycolumn('error', 'time_period', 'int', default=None, nullable=True, after='end', printer=pr)
-cursor.verifycolumn('error', 'message', 'varchar', 255, default=None, nullable=True, after='time_period', printer=pr)
+if not args.nocolumncheck:
+	cursor.verifycolumn('stock', 'symbol', 'varchar', 10, default=None, nullable=True, after='id', printer=pr)
+	cursor.verifycolumn('stock', 'exchange', 'varchar', 10, default=None, nullable=True, after='symbol', printer=pr)
+	cursor.verifycolumn('history', 'date', 'datetime', default=None, nullable=False, after='id_symbol', printer=pr)
+	cursor.verifycolumn('history', 'resolution', 'varchar', 2, default=None, nullable=False, after='date', printer=pr)
+	cursor.verifycolumn('history', 'open', 'decimal', '10,3', default=None, nullable=True, after='resolution', printer=pr)
+	cursor.verifycolumn('history', 'high', 'decimal', '10,3', default=None, nullable=True, after='open', printer=pr)
+	cursor.verifycolumn('history', 'low', 'decimal', '10,3', default=None, nullable=True, after='high', printer=pr)
+	cursor.verifycolumn('history', 'close', 'decimal', '10,3', default=None, nullable=True, after='low', printer=pr)
+	cursor.verifycolumn('history', 'volume', 'decimal', '10,1', default=None, nullable=True, after='close', printer=pr)
+	cursor.verifycolumn('history', 'atr_'+str(args.TIME_PERIOD), 'decimal', '15,8', default=None, nullable=True, printer=pr)
+	cursor.verifycolumn('error', 'resolution', 'varchar', 2, default=None, nullable=True, after='id_symbol', printer=pr)
+	cursor.verifycolumn('error', 'start', 'datetime', default=None, nullable=True, after='resolution', printer=pr)
+	cursor.verifycolumn('error', 'end', 'datetime', default=None, nullable=True, after='start', printer=pr)
+	cursor.verifycolumn('error', 'time_period', 'int', default=None, nullable=True, after='end', printer=pr)
+	cursor.verifycolumn('error', 'message', 'varchar', 255, default=None, nullable=True, after='time_period', printer=pr)
 
 err_count = 0
 

@@ -1,10 +1,10 @@
 # Built-in libraries
-from urllib.request import urlopen
-from urllib.error import HTTPError
 from time import time,sleep
-import json
 from datetime import datetime as dt
 from decimal import Decimal
+
+# Pip libraries
+import requests
 
 class Finnhub:
 	def __init__(self, token="", ratelimit=90, printer=None):
@@ -34,45 +34,40 @@ class Finnhub:
 		#   3 := Invalid API key
 		#   4 := API limit reached
 		#   5 := no_data
-		#   6 := sTimeperiod is too long for serie
+		#   6 := Timeperiod is too long for serie
 		weight = 1
 		
 		self.printer.progressprint(f"Waiting for ratelimit reset ({dt.fromtimestamp(self.ratelimit_resettime)})", prefix=True)
 		self.ratelimit_wait(weight)
 		self.printer.progressprint("Requesting data from Finnhub", prefix=True)
-		try:
-			resp = urlopen(f"http://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
-		except HTTPError as err:
-			resp = err.fp
 
-		if resp.status == 200:
-			self.ratelimit_remaining = int(resp.getheader("x-ratelimit-remaining"))
-			self.ratelimit_resettime = int(resp.getheader("x-ratelimit-reset"))
-			resp = resp.read().decode('utf-8')
-			if resp.find("{") != -1:
-				resp = json.loads(resp)#, parse_float=Decimal)
-				if resp["s"] == "ok":
-					resp['t'] = [dt.fromtimestamp(resp['t'][i]).strftime("%Y-%m-%d %H:%M:%S") for i in range(len(resp['t']))]
-					resp['atr'] = [None if atr == 0 else atr for atr in resp['atr']]
-					i = 0
-					for d in [list(a) for a in zip(resp['o'], resp['h'], resp['l'], resp['c'], resp['v'], resp['atr'])]:
-						resp[resp['t'][i]] = d
-						i += 1
-					for k in ['s', 't', 'o', 'h', 'l', 'c', 'v', 'atr']:
-						resp.pop(k)
-					return 0, resp, "OK"
-				elif resp["s"] == "no_data":
-					return 5, resp, "no_data"
-			else:
-				return 6, resp, "Timeperiod is too long for series"
+		resp = requests.get(f"http://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
+
+		if "X-Ratelimit-Remaining" in resp.headers:
+			self.ratelimit_remaining = int(resp.headers["X-Ratelimit-Remaining"])
+			self.ratelimit_resettime = int(resp.headers["X-Ratelimit-Reset"])
+		
+		if "timeperiod is too long for series" in resp.text.lower():
+			return 6, resp, "Timeperiod is too long for series"
+		elif "no_data" in resp.text.lower():
+			return 5, resp, "no_data"
+		elif "api limit reached" in resp.text.lower():
+			return 4, resp, "API limit reached"
+		elif "invalid api key" in resp.text.lower():
+			return 3, resp, "Invalid API key"
+		elif "{" in resp.text:
+			resp = resp.json()
+			resp['t'] = [dt.fromtimestamp(resp['t'][i]).strftime("%Y-%m-%d %H:%M:%S") for i in range(len(resp['t']))]
+			resp['atr'] = [None if atr == 0 else atr for atr in resp['atr']]
+			i = 0
+			for d in [list(a) for a in zip(resp['o'], resp['h'], resp['l'], resp['c'], resp['v'], resp['atr'])]:
+				resp[resp['t'][i]] = d
+				i += 1
+			for k in ['s', 't', 'o', 'h', 'l', 'c', 'v', 'atr']:
+				resp.pop(k)
+			return 0, resp, "OK"
 		else:
-			data = resp.read().decode('utf-8').lower()
-			if "api limit reached" in data:
-				return 4, resp.fp, "API limit reached"
-			elif "invalid api key" in data:
-				return 3, resp.fp, "Invalid API key"
-			else:
-				return 2, resp, "HTTPError"
+			return 2, resp, "HTTPError"
 
 	def ratelimit_wait(self, weight):
 		# Continuously check for ratelimit until request weight is allowed
