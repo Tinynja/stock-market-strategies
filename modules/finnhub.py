@@ -22,7 +22,7 @@ class Finnhub:
 	def request_atr(self, symbol, resolution, start, end, timeperiod=14):
 		resp = self._request_atr(symbol, resolution, start, end, timeperiod)
 		if resp[0] == 0:
-			self.printer.reprint("Successfully retrieved data from Finnhub.", prefix=True)
+			self.printer.rewrite("Successfully retrieved data from Finnhub.", prefix=True)
 		else:
 			self.printer.reprint(f"Requesting data from Finnhub.... ERROR: {resp[2]}", prefix=True)
 		return resp
