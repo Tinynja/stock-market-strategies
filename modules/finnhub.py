@@ -41,7 +41,7 @@ class Finnhub:
 		self.ratelimit_wait(weight)
 		self.printer.progressprint("Requesting data from Finnhub", prefix=True)
 		try:
-			resp = urlopen(f"https://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
+			resp = urlopen(f"http://finnhub.io/api/v1/indicator?indicator=atr&symbol={symbol}&resolution={resolution}&from={start}&to={end}&timeperiod={timeperiod}&token={self.token}")
 		except HTTPError as err:
 			resp = err.fp
 
