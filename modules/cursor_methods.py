@@ -1,5 +1,6 @@
 # Pip libraries
 from mysql.connector.cursor import CursorBase
+from mysql.connector.cursor_cext import CMySQLCursor
 
 # Basic commands
 def executefetch(self, stmt, args=None, singleton=False, unpack=False):
@@ -14,6 +15,7 @@ def executefetch(self, stmt, args=None, singleton=False, unpack=False):
 	else:
 		return data
 setattr(CursorBase, 'executefetch', executefetch)
+setattr(CMySQLCursor, 'executefetch', executefetch)
 
 def executemanyfetch(self, stmt, args=None):
 	data = []
@@ -22,11 +24,13 @@ def executemanyfetch(self, stmt, args=None):
 		if d: data.append(d)
 	return data
 setattr(CursorBase, 'executemanyfetch', executemanyfetch)
+setattr(CMySQLCursor, 'executemanyfetch', executemanyfetch)
 
 def executecount(self, stmt, data=None):
 	self.executefetch(stmt,data)
 	return self.rowcount
 setattr(CursorBase, 'executecount', executecount)
+setattr(CMySQLCursor, 'executecount', executecount)
 
 # Higher-level commands
 def columninfo(self, table, column, info=None):
@@ -50,6 +54,7 @@ def columninfo(self, table, column, info=None):
 	else:
 		return data
 setattr(CursorBase, 'columninfo', columninfo)
+setattr(CMySQLCursor, 'columninfo', columninfo)
 
 def verifycolumn(self, table, column, data_type, data_type_spec=None, default=None, nullable=True, after=None, printer=None):
 	if printer is not None:
@@ -130,3 +135,4 @@ def verifycolumn(self, table, column, data_type, data_type_spec=None, default=No
 		else:
 			print("OK")
 setattr(CursorBase, 'verifycolumn', verifycolumn)
+setattr(CMySQLCursor, 'verifycolumn', verifycolumn)
