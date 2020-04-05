@@ -1,0 +1,39 @@
+Symbol	Description
+A	Agilent Technologies
+AA	Alcoa Corp
+AAN	Aaron's Inc
+AAP	Advance Auto Parts Inc
+AAT	American Assets Trust
+AB	Alliancebernstein Holding LP
+ABB	Abb Ltd
+ABBV	Abbvie Inc
+ABC	Amerisourcebergen Corp
+ABEV	Ambev S.A.
+ABG	Asbury Automotive Group Inc
+ABM	ABM Industries Incorporated
+ABR	Arbor Realty Trust
+ABR-A	Arbor Rlty TR Inc [Abr/Pa]
+ABR-B	Arbor Rlty TR Inc [Abr/Pb]
+ABR-C	Arbor Rlty TR Inc [Abr/Pc]
+ABT	Abbott Laboratories
+AC	Associated Capital Group Inc
+ACA	Arcosa Inc
+ACB	Aurora Cannabis Inc
+ACC	American Campus Communities Inc
+ACCO	Acco Brands Corp
+ACE.W	Accel Entmt Inc [Acel/W]
+ACEL	Accel Entertainment Inc.
+ACH	Aluminum Corp of China Ltd
+ACM	Aecom Technology Corp
+ACN	Accenture Plc
+ACP	Avenue Income Credit Strategies
+ACRE	Ares Commercial Real Estate Cor
+ACV	Allianzgi Diversified Income &
+ADC	Agree Realty Corp
+ADM	Archer Daniels Midland
+ADNT	Adient Plc
+ADS	Alliance Data Systems Corp
+ADSW	Advanced Disposal Services Inc
+ADT	ADT Inc
+ADX	Adams Express Company
+MFA lol
