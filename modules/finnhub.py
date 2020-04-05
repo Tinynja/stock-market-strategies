@@ -45,7 +45,7 @@ class Finnhub:
 
 		if "X-Ratelimit-Remaining" in resp.headers:
 			self.ratelimit_remaining = int(resp.headers["X-Ratelimit-Remaining"])
-			self.ratelimit_resettime = int(resp.headers["X-Ratelimit-Reset"])
+			self.ratelimit_resettime = int(resp.headers["X-Ratelimit-Reset"])+3
 		
 		if "timeperiod is too long for series" in resp.text.lower():
 			return 6, resp, "Timeperiod is too long for series"
