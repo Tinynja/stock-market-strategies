@@ -58,10 +58,10 @@ class Finnhub:
 		elif "{" in resp.text:
 			resp = resp.json()
 			resp['t'] = [dt.fromtimestamp(resp['t'][i]).strftime("%Y-%m-%d %H:%M:%S") for i in range(len(resp['t']))]
-			resp['atr'] = [None if atr == 0 else atr for atr in resp['atr']]
 			i = 0
 			for d in [list(a) for a in zip(resp['o'], resp['h'], resp['l'], resp['c'], resp['v'], resp['atr'])]:
-				resp[resp['t'][i]] = d
+				if d[-1] != 0:
+					resp[resp['t'][i]] = d
 				i += 1
 			for k in ['s', 't', 'o', 'h', 'l', 'c', 'v', 'atr']:
 				resp.pop(k)
