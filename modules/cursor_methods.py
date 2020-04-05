@@ -4,7 +4,7 @@ from platform import system
 # Pip libraries
 if system() == "Windows":
 	from mysql.connector.cursor import CursorBase
-elif system == "Linux":
+elif system() == "Linux":
 	from mysql.connector.cursor_cext import CMySQLCursor as CursorBase
 
 # Basic commands
