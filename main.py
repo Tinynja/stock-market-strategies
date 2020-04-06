@@ -21,6 +21,7 @@ parser.add_argument("END", help="datetime of the last datapoint (YYYY-mm-dd HH:M
 parser.add_argument("TIME_PERIOD", help="time period to use for ATR indicator")
 parser.add_argument("-a", "--all", help="don't skip stocks already saved in db", action="store_true")
 parser.add_argument("-c", "--nocolumncheck", help="skip checking if necessary columns are in database", action="store_true")
+parser.add_argument("-s", "--skipknownerrors", help="skip symbols that have error records in database", action="store_true")
 args = parser.parse_args()
 
 # Initiate connection and start printer thread
@@ -62,7 +63,7 @@ for exchange in query_exchanges:
 			symbols_indb = [d[0] for d in symbols_indb]
 		for s in stocks:
 			symbol = s['symbol']
-			if (args.all or
+			if ((args.all or
 					symbol not in symbols_indb or
 					not cursor.executecount(f"""
 						SELECT atr_{args.TIME_PERIOD}
@@ -70,7 +71,8 @@ for exchange in query_exchanges:
 						WHERE
 							id_symbol = (SELECT id FROM stock WHERE symbol = %s) and
 							resolution = %s
-						LIMIT 1""", (symbol,args.RESOLUTION))):
+						LIMIT 1""", (symbol,args.RESOLUTION)))
+					and not (args.skipknownerrors and cursor.executefetch("SELECT COUNT(*) FROM error WHERE symbol = %s", (symbol,), singleton=True))):
 				pr.prefix = f"Processing ATR({args.TIME_PERIOD}) for {symbol} ({exchange}): "
 				# Retrieve data from api
 				api_data = api.get_atr(
@@ -90,13 +92,13 @@ for exchange in query_exchanges:
 						cursor.execute("INSERT INTO stock (symbol, description, exchange) VALUES (%s, %s, %s)", (symbol, s['description'], exchange))
 					pr.progressprint("Checking existing data in database", prefix=True)
 					api_data = api_data[1]
-					known_ids = cursor.executefetch(f"""
-						SELECT id,id_symbol,date,resolution
-						FROM history
-						WHERE
-							date IN ({','.join(['%s']*len(api_data))}) and
-							id_symbol = (SELECT id FROM stock WHERE symbol = '{symbol}') and
-							resolution = '{args.RESOLUTION}'""", [t for t in api_data])
+					known_ids = cursor.executefetch((
+						"SELECT id,id_symbol,date,resolution "
+						"FROM history "
+						"WHERE "
+							f"date IN ({','.join(['%s']*len(api_data))}) and "
+							f"id_symbol = (SELECT id FROM stock WHERE symbol = '{symbol}') and "
+							f"resolution = '{args.RESOLUTION}'"), [t for t in api_data])
 					if known_ids:
 						pr.progressprint("Updating existing data in database", prefix=True)
 						known_ids = [(d[0], d[1], d[2].strftime("%Y-%m-%d %H:%M:%S"), d[3]) for d in known_ids]
