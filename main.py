@@ -82,7 +82,7 @@ for exchange in query_exchanges:
 					int(dt.timestamp(args.END)),
 					timeperiod=args.TIME_PERIOD)
 				# Check if data exists in database
-				if api_data[0] == 0:
+				if api_data[0] == 0 and api_data[1]:
 					# Verify stock information in database
 					pr.progressprint("Verifying stock information", prefix=True)
 					known_ids = cursor.executefetch("SELECT id FROM stock WHERE symbol = %s", (symbol,), singleton=True)
@@ -92,13 +92,13 @@ for exchange in query_exchanges:
 						cursor.execute("INSERT INTO stock (symbol, description, exchange) VALUES (%s, %s, %s)", (symbol, s['description'], exchange))
 					pr.progressprint("Checking existing data in database", prefix=True)
 					api_data = api_data[1]
-					known_ids = cursor.executefetch((
-						"SELECT id,id_symbol,date,resolution "
-						"FROM history "
-						"WHERE "
-							f"date IN ({','.join(['%s']*len(api_data))}) and "
-							f"id_symbol = (SELECT id FROM stock WHERE symbol = '{symbol}') and "
-							f"resolution = '{args.RESOLUTION}'"), [t for t in api_data])
+					known_ids = cursor.executefetch(f"""
+						SELECT id,id_symbol,date,resolution
+						FROM history
+						WHERE
+							date IN ({','.join(['%s']*len(api_data))}) and
+							id_symbol = (SELECT id FROM stock WHERE symbol = '{symbol}') and
+							resolution = '{args.RESOLUTION}'""", [t for t in api_data])
 					if known_ids:
 						pr.progressprint("Updating existing data in database", prefix=True)
 						known_ids = [(d[0], d[1], d[2].strftime("%Y-%m-%d %H:%M:%S"), d[3]) for d in known_ids]
